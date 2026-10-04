@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校园电脑维修 · 预约与报价</title>
+<style>
+  :root {
+    --blue:#3b82f6; --indigo:#6366f1; --dark:#1e3a5f;
+    --bg:#f4f6fb; --card:#fff; --line:#e6eaf2; --text:#2b3442; --muted:#8a94a3;
+    --grad: linear-gradient(135deg,#3b82f6,#6366f1 55%,#8b5cf6);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif; background:var(--bg); color:var(--text); line-height:1.65; padding-bottom:48px; }
+
+  /* 顶部 */
+  .hero { background:var(--grad); color:#fff; padding:46px 18px 40px; text-align:center; position:relative; overflow:hidden; }
+  .hero::after { content:""; position:absolute; inset:0; background:radial-gradient(circle at 80% 10%,rgba(255,255,255,.18),transparent 45%); }
+  .hero .inner { position:relative; z-index:1; }
+  .hero .logo { font-size:40px; display:block; margin-bottom:6px; }
+  .hero h1 { font-size:25px; margin-bottom:8px; letter-spacing:1px; }
+  .hero p { opacity:.92; font-size:14px; }
+  .hero .badge { display:inline-block; margin-top:14px; background:rgba(255,255,255,.2); backdrop-filter:blur(4px); padding:7px 18px; border-radius:22px; font-size:13px; border:1px solid rgba(255,255,255,.25); }
+
+  .wrap { max-width:660px; margin:0 auto; padding:0 16px; }
+
+  /* 特色卡片 */
+  .features { display:flex; gap:10px; margin-top:-22px; position:relative; z-index:2; }
+  .feature { flex:1; background:var(--card); border-radius:14px; box-shadow:0 6px 18px rgba(30,60,120,.10); padding:14px 8px; text-align:center; font-size:12.5px; color:var(--dark); }
+  .feature b { display:block; font-size:20px; margin-bottom:3px; }
+
+  .card { background:var(--card); border-radius:16px; box-shadow:0 4px 16px rgba(30,60,120,.08); padding:22px; margin-top:16px; }
+  .card h2 { font-size:17px; color:var(--dark); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .card h2::before { content:""; width:4px; height:18px; background:var(--grad); border-radius:2px; }
+
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { padding:11px 6px; text-align:left; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:12.5px; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:#f8faff; }
+  .price { color:#ea580c; font-weight:700; white-space:nowrap; }
+  .empty-tip { text-align:center; color:var(--muted); padding:16px; font-size:13px; }
+
+  label { display:block; font-size:13px; color:var(--muted); margin:13px 0 5px; }
+  input,select,textarea { width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px; font-size:14px; font-family:inherit; background:#fbfcfe; transition:border .15s; }
+  input:focus,select:focus,textarea:focus { outline:none; border-color:var(--blue); background:#fff; }
+  button[type=submit] { width:100%; margin-top:18px; padding:14px; background:var(--grad); color:#fff; border:none; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; box-shadow:0 6px 16px rgba(99,102,241,.35); }
+  button[type=submit]:hover { filter:brightness(1.06); transform:translateY(-1px); }
+  button[type=submit]:active { transform:translateY(0); }
+  .note { font-size:12px; color:var(--muted); margin-top:10px; text-align:center; }
+  .tip { background:#fff7e8; border:1px solid #f5e0b5; color:#8a6d1a; border-radius:10px; padding:11px 13px; font-size:13px; margin-top:14px; }
+  .ok-box { background:#e9f9ef; border:1px solid #bfe8cf; color:#1e7a46; border-radius:10px; padding:11px 13px; font-size:13px; margin-top:14px; }
+  .err-box { background:#fdeaea; border:1px solid #f3c2c2; color:#b3261e; border-radius:10px; padding:11px 13px; font-size:13px; margin-top:14px; }
+
+  .footer { text-align:center; color:var(--muted); font-size:12px; margin-top:22px; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="logo">🛠️</span>
+    <h1 id="heroTitle">加载中…</h1>
+    <p id="heroSubtitle"></p>
+    <span class="badge" id="contact">📞 加载中…</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="features">
+    <div class="feature"><b>🛠️</b>专业检测维修</div>
+    <div class="feature"><b>💰</b>明码标价不坑</div>
+    <div class="feature"><b>🛡️</b>修后保修安心</div>
+  </div>
+
+  <div class="card">
+    <h2>价目表</h2>
+    <table>
+      <thead><tr><th>服务项目</th><th>内容</th><th>价格</th></tr></thead>
+      <tbody id="priceBody">
+        <tr><td colspan="3" class="empty-tip">加载中…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>在线预约</h2>
+    <form id="orderForm">
+      <label>姓名</label>
+      <input type="text" id="name" placeholder="你的姓名" required>
+      <label>联系方式</label>
+      <input type="text" id="phone" placeholder="手机号或微信号" required>
+      <label>服务类型</label>
+      <select id="service"></select>
+      <label>设备信息</label>
+      <input type="text" id="device" placeholder="例如：联想拯救者 Y7000P 2021 / iPhone 12">
+      <label>问题描述（选填）</label>
+      <textarea id="desc" rows="3" placeholder="例如：电脑发热严重、风扇声音大，开机很慢"></textarea>
+      <button type="submit">提交预约</button>
+    </form>
+    <p class="note">提交后会通过你填写的联系方式与您联系。</p>
+    <div id="result" style="display:none;"></div>
+  </div>
+
+  <p class="footer" id="footer"></p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+  var cfg = window.SITE_CONFIG || {};
+  var SUPABASE_URL = cfg.SUPABASE_URL;
+  var SUPABASE_ANON_KEY = cfg.SUPABASE_ANON_KEY;
+  var configured = SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL.indexOf("你的") === -1 && SUPABASE_ANON_KEY.indexOf("你的") === -1;
+
+  var sb = null;
+  if (configured && window.supabase) {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession:false, autoRefreshToken:false, detectSessionInUrl:false }
+    });
+  }
+
+  function esc(s){ return String(s==null?'':s).replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];}); }
+
+  // 默认值（数据库没数据时兜底）
+  var DEFAULTS = {
+    hero_title: '校园电脑维修 · 预约与报价',
+    hero_subtitle: '明码标价 · 上门/校内取送 · 修后保修',
+    contact: (cfg.CONTACT || '请填写联系方式'),
+    footer: '© 校园电脑维修工作室 · 有问题随时联系'
+  };
+  var DEFAULT_SERVICES = [
+    { name:'笔记本清灰', description:'拆机除尘、换硅脂、清理风扇', price:'30-50 元' },
+    { name:'系统重装/优化', description:'装系统、装驱动、清理提速', price:'30-50 元' },
+    { name:'硬件升级', description:'加内存、换固态硬盘', price:'工费 40-80 元' },
+    { name:'二手回收', description:'上门检测、当面估价、当面付款', price:'按成色估价' },
+    { name:'二手售卖', description:'附验机报告 + 3 天保修', price:'按行情定价' }
+  ];
+
+  function setText(id, val){ var el=document.getElementById(id); if(el) el.textContent = val; }
+
+  function renderServices(list){
+    var tb = document.getElementById('priceBody');
+    tb.innerHTML = '';
+    if(!list.length){
+      tb.innerHTML = '<tr><td colspan="3" class="empty-tip">暂无服务，请稍后刷新</td></tr>';
+    }
+    list.forEach(function(s){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>'+esc(s.name)+'</td><td>'+esc(s.description||'')+'</td><td class="price">'+esc(s.price||'')+'</td>';
+      tb.appendChild(tr);
+    });
+    // 服务下拉框
+    var sel = document.getElementById('service');
+    sel.innerHTML = '';
+    list.forEach(function(s){
+      var o = document.createElement('option');
+      o.textContent = s.name;
+      sel.appendChild(o);
+    });
+  }
+
+  async function loadContent(){
+    if(sb){
+      try {
+        var sv = await sb.from('services').select('*').order('sort_order');
+        if(!sv.error && sv.data && sv.data.length){
+          renderServices(sv.data);
+        } else {
+          renderServices(DEFAULT_SERVICES);
+        }
+        var st = await sb.from('settings').select('*');
+        if(!st.error && st.data){
+          var map = {};
+          st.data.forEach(function(r){ map[r.key] = r.value; });
+          setText('heroTitle', map.hero_title || DEFAULTS.hero_title);
+          setText('heroSubtitle', map.hero_subtitle || DEFAULTS.hero_subtitle);
+          setText('contact', '📞 ' + (map.contact || DEFAULTS.contact));
+          setText('footer', map.footer || DEFAULTS.footer);
+          document.title = (map.hero_title || DEFAULTS.hero_title);
+        } else {
+          setText('heroTitle', DEFAULTS.hero_title);
+          setText('heroSubtitle', DEFAULTS.hero_subtitle);
+          setText('contact', '📞 ' + DEFAULTS.contact);
+          setText('footer', DEFAULTS.footer);
+        }
+      } catch(e){
+        renderServices(DEFAULT_SERVICES);
+        setText('heroTitle', DEFAULTS.hero_title);
+        setText('heroSubtitle', DEFAULTS.hero_subtitle);
+        setText('contact', '📞 ' + DEFAULTS.contact);
+        setText('footer', DEFAULTS.footer);
+      }
+    } else {
+      renderServices(DEFAULT_SERVICES);
+      setText('heroTitle', DEFAULTS.hero_title);
+      setText('heroSubtitle', DEFAULTS.hero_subtitle);
+      setText('contact', '📞 ' + DEFAULTS.contact);
+      setText('footer', DEFAULTS.footer);
+    }
+  }
+
+  loadContent();
+
+  document.getElementById('orderForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var order = {
+      name: document.getElementById('name').value,
+      phone: document.getElementById('phone').value,
+      service: document.getElementById('service').value,
+      device: document.getElementById('device').value,
+      problem: document.getElementById('desc').value
+    };
+    var box = document.getElementById('result');
+    box.style.display = 'block';
+
+    if(sb){
+      sb.from('orders').insert([order]).then(function(res){
+        if(res.error){
+          box.className = 'err-box';
+          box.innerHTML = '❌ 提交失败：' + esc(res.error.message);
+        } else {
+          box.className = 'ok-box';
+          box.innerHTML = '✅ 预约成功！我们会尽快通过 ' + esc(order.phone) + ' 联系你。';
+          e.target.reset();
+        }
+      });
+    } else {
+      box.className = 'tip';
+      box.innerHTML = '⚠️ 当前是演示模式（还没连接数据库）。预约已暂存在本机浏览器，请完成部署后再上线。';
+    }
+  });
+</script>
+
+</body>
+</html>
