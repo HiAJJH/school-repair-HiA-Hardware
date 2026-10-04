@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校园HiA工作室电脑维修 · 预约与报价</title>
+<style>
+  :root { --blue:#2e74b5; --dark:#1f4e79; --bg:#f5f7fa; --card:#fff; --line:#e3e8ee; --text:#333; --muted:#8a94a3; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif; background:var(--bg); color:var(--text); line-height:1.6; padding-bottom:40px; }
+  .hero { background:linear-gradient(135deg,var(--dark),var(--blue)); color:#fff; padding:32px 16px; text-align:center; }
+  .hero h1 { font-size:26px; margin-bottom:6px; }
+  .hero p { opacity:.9; font-size:14px; }
+  .hero .badge { display:inline-block; margin-top:10px; background:rgba(255,255,255,.18); padding:4px 14px; border-radius:20px; font-size:13px; }
+  .wrap { max-width:640px; margin:0 auto; padding:0 14px; }
+  .card { background:var(--card); border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.05); padding:20px; margin-top:16px; }
+  .card h2 { font-size:18px; color:var(--dark); border-left:4px solid var(--blue); padding-left:10px; margin-bottom:14px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { padding:10px 8px; text-align:left; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:13px; }
+  tr:last-child td { border-bottom:none; }
+  .price { color:#e8590c; font-weight:700; white-space:nowrap; }
+  label { display:block; font-size:13px; color:var(--muted); margin:12px 0 4px; }
+  input,select,textarea { width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; font-size:14px; font-family:inherit; }
+  input:focus,select:focus,textarea:focus { outline:none; border-color:var(--blue); }
+  button { width:100%; margin-top:16px; padding:13px; background:var(--blue); color:#fff; border:none; border-radius:8px; font-size:16px; font-weight:600; cursor:pointer; }
+  button:hover { background:var(--dark); }
+  .note { font-size:12px; color:var(--muted); margin-top:10px; }
+  .tip { background:#fff8e6; border:1px solid #f3e3b0; color:#8a6d1a; border-radius:8px; padding:10px 12px; font-size:13px; margin-top:12px; }
+  .footer { text-align:center; color:var(--muted); font-size:12px; margin-top:20px; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>校园HiA工作室电脑维修 · 预约与报价</h1>
+  <p>明码标价 · 上门/校内取送 · 修后保修</p>
+  <span class="badge" id="contact">📞 加载中…</span>
+</div>
+
+<div class="wrap">
+
+  <div class="card">
+    <h2>价目表</h2>
+    <table>
+      <tr><th>服务项目</th><th>内容</th><th>价格</th></tr>
+      <tr><td>笔记本清灰</td><td>拆机除尘、换硅脂、清理风扇</td><td class="price">一口价89元</td></tr>
+      <tr><td>系统重装/优化</td><td>装系统、装驱动、清理提速</td><td class="price">9.9 元</td></tr>
+      <tr><td>硬件升级</td><td>加内存、换固态硬盘</td><td class="price">工费 19.9元</td></tr>
+      <tr><td>二手回收</td><td>上门检测、当面估价、当面付款</td><td class="price">按成色估价</td></tr>
+      <tr><td>二手售卖</td><td>附验机报告 + 3 天保修</td><td class="price">按行情定价</td></tr>
+    </table>
+    <div class="tip">💡 学生价：均比校外维修店便宜 30% 以上；维修前当面确认价格，绝不乱加价。</div>
+  </div>
+
+  <div class="card">
+    <h2>在线预约</h2>
+    <form id="orderForm">
+      <label>姓名</label>
+      <input type="text" id="name" placeholder="你的姓名" required>
+      <label>联系方式</label>
+      <input type="text" id="phone" placeholder="手机号或微信号" required>
+      <label>服务类型</label>
+      <select id="service">
+        <option>笔记本清灰</option>
+        <option>系统重装/优化</option>
+        <option>硬件升级</option>
+        <option>二手设备回收</option>
+        <option>二手设备购买咨询</option>
+      </select>
+      <label>设备信息</label>
+      <input type="text" id="device" placeholder="例如：联想拯救者 Y7000P 2021 / iPhone 18Pro256九五新">
+      <label>问题描述（选填）</label>
+      <textarea id="desc" rows="3" placeholder="例如：电脑发热严重、风扇声音大，开机很慢"></textarea>
+      <button type="submit">提交预约</button>
+    </form>
+    <p class="note">提交后会通过你填写的联系方式与您联系。</p>
+    <div id="result" class="tip" style="display:none;"></div>
+  </div>
+
+  <p class="footer">© 校园HiAHardware工作室 · 有问题随时联系</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+  var cfg = window.SITE_CONFIG || {};
+  var SUPABASE_URL = cfg.SUPABASE_URL;
+  var SUPABASE_ANON_KEY = cfg.SUPABASE_ANON_KEY;
+  var configured = SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL.indexOf("你的") === -1 && SUPABASE_ANON_KEY.indexOf("你的") === -1;
+
+  document.getElementById('contact').textContent = '📞 ' + (cfg.CONTACT || '请填写联系方式');
+
+  var sb = null;
+  if (configured && window.supabase) {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      }
+    });
+  }
+
+  document.getElementById('orderForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var order = {
+      name: document.getElementById('name').value,
+      phone: document.getElementById('phone').value,
+      service: document.getElementById('service').value,
+      device: document.getElementById('device').value,
+      problem: document.getElementById('desc').value
+    };
+    var box = document.getElementById('result');
+    box.style.display = 'block';
+    box.style.whiteSpace = 'normal';
+
+    if (sb) {
+      sb.from('orders').insert([order]).then(function (res) {
+        if (res.error) {
+          box.innerHTML = '❌ 提交失败：' + res.error.message;
+        } else {
+          box.innerHTML = '✅ 预约成功！我们会尽快通过 ' + order.phone + ' 联系你。';
+          e.target.reset();
+        }
+      });
+    } else {
+      // 未配置数据库时的本地演示模式
+      var list = JSON.parse(localStorage.getItem('orders') || '[]');
+      list.push(order);
+      localStorage.setItem('orders', JSON.stringify(list));
+      box.innerHTML = '⚠️ 当前是演示模式（还没连接数据库）。预约已暂存在本机浏览器，请完成部署后再上线。';
+    }
+  });
+</script>
+
+</body>
+</html>
