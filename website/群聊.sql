@@ -1,0 +1,42 @@
+-- ============================================================
+-- 群聊系统：消息表 + 文件存储桶
+-- 在 Supabase → SQL Editor 粘贴整段运行一次
+-- ============================================================
+
+-- 群聊消息表
+create table if not exists public.group_messages (
+  id uuid primary key default gen_random_uuid(),
+  name text not null default '同学',
+  type text not null default 'text',   -- text | image | video | voice
+  content text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.group_messages enable row level security;
+
+-- 都能发消息
+drop policy if exists "群聊插入" on public.group_messages;
+create policy "群聊插入" on public.group_messages
+  for insert to anon, authenticated with check (true);
+
+-- 都能看消息
+drop policy if exists "群聊查看" on public.group_messages;
+create policy "群聊查看" on public.group_messages
+  for select to anon, authenticated using (true);
+
+-- 开启实时
+alter publication supabase_realtime add table public.group_messages;
+
+-- 文件存储桶（存图片/视频/语音）
+insert into storage.buckets (id, name, public) values ('chat', 'chat', true)
+on conflict (id) do nothing;
+
+-- 都能上传文件
+drop policy if exists "聊天文件上传" on storage.objects;
+create policy "聊天文件上传" on storage.objects
+  for insert to anon, authenticated with check (bucket_id = 'chat');
+
+-- 都能读取文件
+drop policy if exists "聊天文件读取" on storage.objects;
+create policy "聊天文件读取" on storage.objects
+  for select to anon, authenticated using (bucket_id = 'chat');
