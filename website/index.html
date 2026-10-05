@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校园电脑维修 · 预约</title>
+<style>
+  /* ===== 浅色（白天） ===== */
+  :root {
+    --grad:linear-gradient(135deg,#f59e0b,#ea580c);
+    --title-grad:linear-gradient(180deg,#ffffff 0%,#ffe2a8 55%,#ffd27a 100%);
+    --blue:#ea580c; --cyan:#d97706; --orange:#c2410c;
+    --bg:#f4e7d3; --card:#faf0e0; --card2:#eeddbf; --line:#dfc9a3;
+    --text:#3f2d1e; --muted:#8a6f4f; --heading:#2c1d12;
+    --hero-bg:linear-gradient(160deg,#f59e0b,#f97316);
+    --hero-grid:rgba(255,255,255,.16);
+    --hero-glow:rgba(255,255,255,.22);
+    --hero-title:#ffffff; --hero-sub:#ffedd5;
+    --hero-badge-bg:rgba(255,255,255,.18); --hero-badge-border:rgba(255,255,255,.28); --hero-badge-text:#ffedd5;
+    --status-bg:rgba(217,119,6,.14); --status-border:rgba(217,119,6,.35); --status-text:#92400e;
+    --input-bg:#fdf5e7; --input-text:#3f2d1e; --placeholder:#ab8f68;
+    --call-bg:#faf0e0; --call-text:#ea580c;
+    --ok-bg:#ecfdf5; --ok-border:#a7f3d0; --ok-text:#047857;
+    --err-bg:#fef2f2; --err-border:#fecaca; --err-text:#b91c1c;
+    --warn-bg:#fffbeb; --warn-border:#fde68a; --warn-text:#92400e;
+  }
+  /* ===== 深色（晚上） ===== */
+  [data-theme="dark"] {
+    --grad:linear-gradient(135deg,#2563eb,#06b6d4);
+    --title-grad:linear-gradient(180deg,#ffffff 0%,#a5f3fc 55%,#67e8f9 100%);
+    --blue:#3b82f6; --cyan:#22d3ee; --orange:#fb923c;
+    --bg:#0b1120; --card:#151f32; --card2:#1a2537; --line:#263349;
+    --text:#e2e8f0; --muted:#8b9bb0; --heading:#f1f5f9;
+    --hero-bg:linear-gradient(160deg,#0b1120,#0f172a);
+    --hero-grid:rgba(59,130,246,.12);
+    --hero-glow:rgba(34,211,238,.22);
+    --hero-title:#ffffff; --hero-sub:#cbd5e1;
+    --hero-badge-bg:rgba(255,255,255,.08); --hero-badge-border:rgba(255,255,255,.14); --hero-badge-text:#e2e8f0;
+    --status-bg:rgba(34,211,238,.12); --status-border:rgba(34,211,238,.35); --status-text:#67e8f9;
+    --input-bg:#0b1120; --input-text:#e2e8f0; --placeholder:#5b6b82;
+    --call-bg:#151f32; --call-text:#3b82f6;
+    --ok-bg:rgba(16,185,129,.12); --ok-border:rgba(16,185,129,.3); --ok-text:#6ee7b7;
+    --err-bg:rgba(239,68,68,.12); --err-border:rgba(239,68,68,.3); --err-text:#fca5a5;
+    --warn-bg:rgba(251,191,36,.12); --warn-border:rgba(251,191,36,.3); --warn-text:#fcd34d;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif; background:var(--bg); color:var(--text); line-height:1.6; padding-bottom:48px; -webkit-font-smoothing:antialiased; transition:background .3s,color .3s; }
+  /* 加载中：只显示背景，内容隐藏，加载完成后一起淡入上滑 */
+  .status, .notice, .hero .inner, .wrap { transition:opacity .5s ease, transform .5s ease; }
+  body.loading .status, body.loading .notice, body.loading .hero .inner, body.loading .wrap { opacity:0; transform:translateY(14px); }
+
+  .theme-toggle { position:fixed; top:14px; right:14px; width:42px; height:42px; border-radius:50%; background:var(--card); border:1px solid var(--line); cursor:pointer; font-size:19px; z-index:100; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 10px rgba(0,0,0,.18); }
+
+  .notice { background:var(--warn-bg); color:var(--warn-text); font-size:13px; text-align:center; padding:9px 14px; border-bottom:1px solid var(--warn-border); }
+
+  .hero { background:var(--hero-bg); color:var(--hero-title); padding:40px 18px 38px; text-align:center; position:relative; overflow:hidden; }
+  .hero .gridbg { position:absolute; inset:0;
+    background-image:linear-gradient(var(--hero-grid) 1px, transparent 1px),linear-gradient(90deg, var(--hero-grid) 1px, transparent 1px);
+    background-size:26px 26px; }
+  .hero .glow { position:absolute; inset:0; background:radial-gradient(circle at 80% 10%, var(--hero-glow), transparent 42%); }
+  .hero .inner { position:relative; z-index:1; max-width:640px; margin:0 auto; }
+  .status { position:fixed; top:14px; left:14px; z-index:100; display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--status-text); background:var(--status-bg); border:1px solid var(--status-border); padding:6px 14px; border-radius:20px; backdrop-filter:blur(4px); }
+  .status .dot { width:7px; height:7px; border-radius:50%; background:#22c55e; box-shadow:0 0 0 0 rgba(34,197,94,.6); animation:pulse 1.6s infinite; }
+  .status .dot.off { background:#9ca3af; animation:none; box-shadow:none; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(34,197,94,.5);} 70%{box-shadow:0 0 0 7px rgba(34,197,94,0);} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0);} }
+  .hero h1 { font-size:28px; font-weight:800; letter-spacing:1px; margin-bottom:6px; background:var(--title-grad); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; filter:drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+  .sub-wrap { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:14px; }
+  .sub-badge { display:inline-flex; align-items:center; gap:6px; padding:7px 15px; border-radius:20px; background:var(--hero-badge-bg); border:1px solid var(--hero-badge-border); color:var(--hero-badge-text); font-size:13px; font-weight:600; backdrop-filter:blur(4px); }
+  .sub-badge .e { font-size:14px; }
+
+  .wrap { max-width:660px; margin:0 auto; padding:0 16px; }
+
+  .quick { display:flex; gap:10px; margin-top:-18px; position:relative; z-index:2; }
+  .qa { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:13px 10px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; border:none; }
+  .qa.call { background:var(--call-bg); color:var(--call-text); border:1px solid var(--line); }
+  .qa.wechat { background:var(--grad); color:#fff; }
+
+  .section { margin-top:28px; }
+  .sec-title { font-size:17px; font-weight:700; color:var(--heading); margin-bottom:14px; padding-left:10px; border-left:3px solid var(--cyan); display:flex; align-items:center; gap:8px; }
+  .sec-title small { font-weight:400; color:var(--muted); font-size:12px; }
+
+  .sv-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(185px,1fr)); gap:12px; }
+  .sv-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; cursor:pointer; transition:border .15s, box-shadow .15s, background .15s, transform .18s; position:relative; }
+  .sv-card:hover { border-color:var(--blue); box-shadow:0 6px 18px rgba(0,0,0,.18); transform:translateY(-4px); }
+  .sv-card.selected { border-color:var(--cyan); background:var(--card2); animation:pop .3s ease; }
+  .sv-card .ic { width:40px; height:40px; border-radius:9px; background:var(--grad); display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:10px; }
+  .sv-card .nm { font-weight:700; font-size:15px; color:var(--heading); }
+  .sv-card .ds { font-size:12.5px; color:var(--muted); margin:4px 0 8px; min-height:34px; }
+  .sv-card .pr { color:var(--orange); font-weight:700; font-size:14px; }
+  .sv-card .check { display:none; position:absolute; top:12px; right:12px; width:20px; height:20px; border-radius:50%; background:var(--cyan); color:#062b33; font-size:11px; text-align:center; line-height:20px; font-weight:700; }
+  .sv-card.selected .check { display:block; }
+
+  .steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; }
+  .step { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 10px; text-align:center; }
+  .step .n { width:26px; height:26px; margin:0 auto 6px; background:var(--card2); color:var(--cyan); border:1px solid var(--line); border-radius:6px; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; font-family:ui-monospace,monospace; }
+  .step .t { font-size:13px; font-weight:700; color:var(--heading); }
+  .step .d { font-size:11.5px; color:var(--muted); margin-top:2px; }
+
+  .form-card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px; }
+  label { display:block; font-size:13px; color:var(--heading); margin:14px 0 6px; font-weight:600; }
+  label .req { color:#f87171; margin-left:2px; }
+  input,textarea { width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:9px; font-size:14px; font-family:inherit; background:var(--input-bg); color:var(--input-text); }
+  input::placeholder,textarea::placeholder { color:var(--placeholder); }
+  input:focus,textarea:focus { outline:none; border-color:var(--cyan); box-shadow:0 0 0 3px rgba(34,211,238,.15); }
+  .btn-submit { width:100%; margin-top:20px; padding:14px; background:var(--grad); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; }
+  .btn-submit:hover { filter:brightness(1.08); }
+  .note { font-size:12px; color:var(--muted); margin-top:10px; text-align:center; }
+  .ok-box { background:var(--ok-bg); border:1px solid var(--ok-border); color:var(--ok-text); border-radius:9px; padding:11px 13px; font-size:13px; margin-top:12px; }
+  .err-box { background:var(--err-bg); border:1px solid var(--err-border); color:var(--err-text); border-radius:9px; padding:11px 13px; font-size:13px; margin-top:12px; }
+  .demo-box { background:var(--warn-bg); border:1px solid var(--warn-border); color:var(--warn-text); border-radius:9px; padding:11px 13px; font-size:13px; margin-top:12px; }
+
+  details { background:var(--card); border:1px solid var(--line); border-radius:10px; margin-bottom:8px; overflow:hidden; }
+  summary { padding:13px 15px; font-weight:600; font-size:14px; cursor:pointer; list-style:none; display:flex; justify-content:space-between; color:var(--heading); }
+  summary::after { content:"＋"; color:var(--cyan); font-weight:700; }
+  details[open] summary::after { content:"－"; }
+  details p { padding:0 15px 13px; font-size:13px; color:var(--muted); }
+
+  .footer { text-align:center; color:var(--muted); font-size:12.5px; margin-top:30px; }
+  .footer-logo { display:none; width:65%; max-width:400px; aspect-ratio:3.5/1.8; margin:24px auto 14px; background-size:cover; background-position:center; mix-blend-mode:multiply; }
+  .footer-logo.has-logo { display:block; }
+  [data-theme="dark"] .footer-logo { mix-blend-mode:screen; filter:invert(1); opacity:.8; }
+
+  .chat-fab { position:fixed; bottom:22px; right:22px; width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; font-size:26px; display:flex; align-items:center; justify-content:center; text-decoration:none; box-shadow:0 6px 20px rgba(79,70,229,.45); z-index:99; transition:transform .15s; }
+  .chat-fab:hover { transform:scale(1.08); }
+
+  /* ===== 动画 ===== */
+  @keyframes pop { 0%{transform:scale(1);} 50%{transform:scale(1.05);} 100%{transform:scale(1);} }
+  .reveal { opacity:0; transform:translateY(22px); transition:opacity .5s ease, transform .5s ease; }
+  .reveal.visible { opacity:1; transform:translateY(0); }
+  .qa { transition:transform .15s, box-shadow .15s; }
+  .qa:hover { transform:translateY(-2px); }
+  .qa:active, .btn-submit:active { transform:scale(.96); }
+  .btn-submit { transition:transform .15s, filter .15s; }
+  details summary { transition:background .2s; }
+  details:hover summary { background:var(--card2); }
+
+  /* ===== 手机端适配 ===== */
+  @media (max-width: 640px) {
+    body { padding-bottom:32px; }
+    .status { top:10px; left:10px; padding:5px 11px; font-size:11px; }
+    .theme-toggle { top:10px; right:10px; width:36px; height:36px; font-size:16px; }
+    .hero { padding:26px 16px 28px; }
+    .hero h1 { font-size:22px; }
+    .hero p { font-size:12.5px; }
+    .wrap { padding:0 12px; }
+    .quick { margin-top:-16px; }
+    .qa { padding:11px 8px; font-size:12.5px; }
+    .section { margin-top:20px; }
+    .sec-title { font-size:15px; margin-bottom:10px; }
+    .sv-grid { grid-template-columns:repeat(2, 1fr); gap:9px; }
+    .sv-card { padding:12px; }
+    .sv-card .ic { width:34px; height:34px; font-size:17px; margin-bottom:8px; border-radius:8px; }
+    .sv-card .nm { font-size:14px; }
+    .sv-card .ds { font-size:11.5px; margin:3px 0 6px; min-height:30px; }
+    .sv-card .pr { font-size:13px; }
+    .steps { grid-template-columns:repeat(2, 1fr); gap:8px; }
+    .step { padding:11px 8px; }
+    .form-card { padding:16px; }
+    label { margin:11px 0 5px; font-size:12.5px; }
+    input, textarea { padding:10px 12px; font-size:13.5px; }
+    .btn-submit { margin-top:16px; padding:13px; }
+    details summary { padding:12px 14px; font-size:13px; }
+  }
+
+  /* ===== 电脑端适配 ===== */
+  @media (min-width: 900px) {
+    .wrap { max-width:780px; }
+    .sv-grid { grid-template-columns:repeat(3, 1fr); }
+    .steps { grid-template-columns:repeat(4, 1fr); }
+    .hero { padding:52px 18px 46px; }
+    .hero h1 { font-size:32px; }
+  }
+</style>
+</head>
+<body class="loading">
+
+<div class="status" id="statusBadge"><span class="dot"></span> 在线接单中</div>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深浅色">🌙</button>
+<a class="chat-fab" href="chat.html" title="群聊">💬</a>
+
+<div id="noticeBar" class="notice" style="display:none;"></div>
+
+<div class="hero">
+  <div class="gridbg"></div>
+  <div class="glow"></div>
+  <div class="inner">
+    <h1 id="heroTitle"></h1>
+    <div class="sub-wrap" id="heroSubtitle"></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="quick">
+    <a class="qa call" id="callBtn" href="tel:">📞 拨打电话</a>
+    <button class="qa wechat" onclick="copyWechat()">💬 复制微信</button>
+  </div>
+
+  <div class="section">
+    <h2 class="sec-title">服务项目 <small>点击卡片选择</small></h2>
+    <div class="sv-grid" id="svGrid"></div>
+  </div>
+
+  <div class="section">
+    <h2 class="sec-title">服务流程</h2>
+    <div class="steps">
+      <div class="step"><div class="n">01</div><div class="t">在线预约</div><div class="d">填写下方表单</div></div>
+      <div class="step"><div class="n">02</div><div class="t">确认沟通</div><div class="d">电话/微信联系</div></div>
+      <div class="step"><div class="n">03</div><div class="t">上门维修</div><div class="d">当面检测报价</div></div>
+      <div class="step"><div class="n">04</div><div class="t">完成保修</div><div class="d">交付+3天保修</div></div>
+    </div>
+  </div>
+
+  <div class="section" id="book">
+    <h2 class="sec-title">在线预约</h2>
+    <div class="form-card">
+      <form id="orderForm">
+        <label>姓名<span class="req">*</span></label>
+        <input type="text" id="name" placeholder="你的姓名" required>
+        <label>联系方式<span class="req">*</span></label>
+        <input type="text" id="phone" placeholder="手机号或微信号" required>
+        <label>设备信息</label>
+        <input type="text" id="device" placeholder="例如：联想拯救者 Y7000P 2021 / iPhone 12">
+        <label>问题描述（选填）</label>
+        <textarea id="desc" rows="3" placeholder="例如：电脑发热严重、风扇声音大，开机很慢"></textarea>
+        <button type="submit" class="btn-submit">提交预约</button>
+      </form>
+      <p class="note">提交后会通过你填写的联系方式与您联系</p>
+      <div id="result" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="sec-title">常见问题</h2>
+    <details><summary>电脑清灰多久能好？</summary><p>一般 30~60 分钟可完成，视机器情况而定，可当面等或约时间取。</p></details>
+    <details><summary>上门服务范围是哪里？</summary><p>校内及附近宿舍/教室均可上门，取送免费。</p></details>
+    <details><summary>二手设备回收怎么估价？</summary><p>当面检测成色、配置后按行情报价，双方同意后当面付款。</p></details>
+    <details><summary>维修后有保修吗？</summary><p>维修服务提供 3 天保修，非人为问题免费返修。</p></details>
+  </div>
+
+  <div class="footer-logo" id="footerLogo"></div>
+  <p class="footer" id="footer"></p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+  // ===== 日夜模式 =====
+  function applyTheme(t){
+    document.documentElement.setAttribute('data-theme', t);
+    var btn = document.getElementById('themeToggle');
+    if(btn) btn.textContent = (t === 'dark') ? '☀️' : '🌙';
+  }
+  function toggleTheme(){
+    var cur = document.documentElement.getAttribute('data-theme') || 'light';
+    var next = (cur === 'dark') ? 'light' : 'dark';
+    applyTheme(next);
+  }
+  (function initTheme(){
+    var h = new Date().getHours();
+    var autoDark = (h >= 19 || h < 7);   // 19:00 ~ 次日7:00 为晚上
+    applyTheme(autoDark ? 'dark' : 'light');
+  })();
+
+  var cfg = window.SITE_CONFIG || {};
+  var SUPABASE_URL = cfg.SUPABASE_URL;
+  var SUPABASE_ANON_KEY = cfg.SUPABASE_ANON_KEY;
+  var configured = SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL.indexOf("你的") === -1 && SUPABASE_ANON_KEY.indexOf("你的") === -1;
+
+  var sb = null;
+  if (configured && window.supabase) {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession:false, autoRefreshToken:false, detectSessionInUrl:false }
+    });
+  }
+
+  function esc(s){ return String(s==null?'':s).replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];}); }
+  function setText(id,val){ var el=document.getElementById(id); if(el) el.textContent=val; }
+
+  function renderSubtitle(text){
+    var el = document.getElementById('heroSubtitle');
+    if(!el) return;
+    var parts = String(text||'').split('·').map(function(s){ return s.trim(); }).filter(Boolean);
+    if(!parts.length){ el.innerHTML=''; return; }
+    el.innerHTML = parts.map(function(p){
+      var icon = '✦';
+      if(p.indexOf('价')>=0 || p.indexOf('明码')>=0) icon = '💰';
+      else if(p.indexOf('上门')>=0 || p.indexOf('取送')>=0) icon = '🚚';
+      else if(p.indexOf('保修')>=0) icon = '🛡️';
+      else if(p.indexOf('响应')>=0 || p.indexOf('快')>=0) icon = '⚡';
+      return '<span class="sub-badge"><span class="e">'+icon+'</span>'+esc(p)+'</span>';
+    }).join('');
+  }
+
+  var DEFAULTS = {
+    hero_title:'校园电脑维修',
+    hero_subtitle:'明码标价 · 上门/校内取送 · 修后保修',
+    phone:'', wechat:'', notice:'', logo:'', status:'open',
+    footer:'© 校园电脑维修工作室 · 有问题随时联系'
+  };
+  var DEFAULT_SERVICES = [
+    { name:'笔记本清灰', description:'拆机除尘、换硅脂、清理风扇', price:'一口价89元' },
+    { name:'系统重装/优化', description:'装系统、装驱动、清理提速', price:'9.9 元' },
+    { name:'硬件升级', description:'加内存、换固态硬盘', price:'工费 19.9元' },
+    { name:'二手回收', description:'上门检测、当面估价、当面付款', price:'按成色估价' },
+    { name:'二手售卖', description:'附验机报告 + 3 天保修', price:'按行情定价' }
+  ];
+
+  var SERVICES = DEFAULT_SERVICES;
+  var SETTINGS = DEFAULTS;
+  var selectedService = '';
+
+  function iconFor(name){
+    var n = name || '';
+    if(n.indexOf('清灰')>=0) return '🧹';
+    if(n.indexOf('系统')>=0) return '💻';
+    if(n.indexOf('硬件')>=0 || n.indexOf('升级')>=0 || n.indexOf('内存')>=0 || n.indexOf('固态')>=0) return '⚡';
+    if(n.indexOf('回收')>=0) return '♻️';
+    if(n.indexOf('售卖')>=0) return '🛒';
+    if(n.indexOf('手机')>=0) return '📱';
+    if(n.indexOf('电池')>=0) return '🔋';
+    if(n.indexOf('屏幕')>=0 || n.indexOf('屏')>=0) return '🖥️';
+    if(n.indexOf('数据')>=0 || n.indexOf('恢复')>=0) return '💾';
+    return '🔧';
+  }
+
+  function applySettings(){
+    setText('heroTitle', SETTINGS.hero_title);
+    renderSubtitle(SETTINGS.hero_subtitle);
+    setText('footer', SETTINGS.footer);
+    var call = document.getElementById('callBtn');
+    call.href = SETTINGS.phone ? ('tel:' + SETTINGS.phone) : '#';
+    var nb = document.getElementById('noticeBar');
+    if(SETTINGS.notice && SETTINGS.notice.trim()){
+      nb.style.display='block'; nb.innerHTML='📢 ' + esc(SETTINGS.notice);
+    } else { nb.style.display='none'; }
+    var footerLogo = document.getElementById('footerLogo');
+    if(footerLogo){
+      if(SETTINGS.logo){
+        footerLogo.classList.add('has-logo');
+        footerLogo.style.backgroundImage = 'url("'+SETTINGS.logo+'")';
+      } else {
+        footerLogo.classList.remove('has-logo');
+        footerLogo.style.backgroundImage = '';
+      }
+    }
+    var statusBadge = document.getElementById('statusBadge');
+    if(statusBadge){
+      var off = (SETTINGS.status === 'closed');
+      statusBadge.innerHTML = '<span class="dot'+(off?' off':'')+'"></span> ' + (off ? '休息中' : '在线接单中');
+    }
+  }
+
+  function renderServices(list){
+    SERVICES = list.length ? list : DEFAULT_SERVICES;
+    var grid = document.getElementById('svGrid');
+    grid.innerHTML = '';
+    SERVICES.forEach(function(s){
+      var card = document.createElement('div');
+      card.className = 'sv-card';
+      card.innerHTML =
+        '<span class="check">✓</span>' +
+        '<div class="ic">' + iconFor(s.name) + '</div>' +
+        '<div class="nm">' + esc(s.name) + '</div>' +
+        '<div class="ds">' + esc(s.description || '') + '</div>' +
+        '<div class="pr">' + esc(s.price || '') + '</div>';
+      card.addEventListener('click', function(){ selectService(s.name, card); });
+      grid.appendChild(card);
+    });
+    if(SERVICES[0]) selectService(SERVICES[0].name, grid.querySelector('.sv-card'));
+  }
+
+  function selectService(name, card){
+    document.querySelectorAll('.sv-card').forEach(function(c){ c.classList.remove('selected'); });
+    if(card) card.classList.add('selected');
+    selectedService = name;
+  }
+
+  function copyWechat(){
+    var w = SETTINGS.wechat || '';
+    if(!w){ alert('微信号暂未设置'); return; }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(w).then(function(){ toast('微信号已复制：'+w); }, function(){ fallbackCopy(w); });
+    } else { fallbackCopy(w); }
+  }
+  function fallbackCopy(text){
+    var ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); toast('微信号已复制：'+text);
+  }
+  function toast(t){
+    var el=document.getElementById('toast'); if(!el){
+      el=document.createElement('div'); el.id='toast';
+      el.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;z-index:99;';
+      document.body.appendChild(el);
+    }
+    el.textContent=t; el.style.display='block';
+    setTimeout(function(){ el.style.display='none'; },1800);
+  }
+
+  async function loadContent(){
+    if(sb){
+      try {
+        var st = await sb.from('settings').select('*');
+        if(!st.error && st.data){
+          var map={}; st.data.forEach(function(r){ map[r.key]=r.value; });
+          SETTINGS = {
+            hero_title: map.hero_title || DEFAULTS.hero_title,
+            hero_subtitle: map.hero_subtitle || DEFAULTS.hero_subtitle,
+            phone: map.phone || DEFAULTS.phone,
+            wechat: map.wechat || DEFAULTS.wechat,
+            notice: map.notice || DEFAULTS.notice,
+            logo: map.logo || DEFAULTS.logo,
+            status: map.status || DEFAULTS.status,
+            footer: map.footer || DEFAULTS.footer
+          };
+        }
+        var sv = await sb.from('services').select('*').order('sort_order');
+        if(!sv.error && sv.data && sv.data.length){
+          SERVICES = sv.data;
+        }
+      } catch(e){ /* 用默认值 */ }
+    }
+    applySettings();
+    renderServices(SERVICES);
+    setupReveal();
+    document.body.classList.remove('loading');
+  }
+
+  function setupReveal(){
+    var sections = document.querySelectorAll('.section');
+    if(!('IntersectionObserver' in window)){
+      sections.forEach(function(el){ el.classList.add('visible'); });
+      return;
+    }
+    sections.forEach(function(el){ el.classList.add('reveal'); });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){
+          en.target.classList.add('visible');
+          io.unobserve(en.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    sections.forEach(function(el){ io.observe(el); });
+  }
+
+  loadContent();
+
+  document.getElementById('orderForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var order = {
+      name: document.getElementById('name').value,
+      phone: document.getElementById('phone').value,
+      service: selectedService,
+      device: document.getElementById('device').value,
+      problem: document.getElementById('desc').value
+    };
+    var box = document.getElementById('result');
+    box.style.display='block';
+    if(sb){
+      sb.from('orders').insert([order]).then(function(res){
+        if(res.error){
+          box.className='err-box';
+          box.innerHTML='提交失败：'+esc(res.error.message);
+        } else {
+          box.className='ok-box';
+          box.innerHTML='预约成功！我们会尽快通过 <b>'+esc(order.phone)+'</b> 联系你。';
+          e.target.reset();
+          if(SERVICES[0]) selectService(SERVICES[0].name, document.querySelector('.sv-card'));
+        }
+      });
+    } else {
+      box.className='demo-box';
+      box.innerHTML='当前是演示模式（还没连接数据库），预约暂存本机浏览器。';
+    }
+  });
+</script>
+
+</body>
+</html>
